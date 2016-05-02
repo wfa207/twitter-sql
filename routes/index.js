@@ -37,7 +37,6 @@ module.exports = function makeRouterWithSockets (io, client) {
     client.query("SELECT * FROM tweets, users WHERE users.id=tweets.userid AND tweets.id=$1", [req.params.id], function(err, result){
       if (err) console.error(err);
       var tweetsWithThatId = result.rows; //tweetBank.find({ id: Number(req.params.id) });
-      console.log(tweetsWithThatId);
       res.render('index', {
         title: 'Twitter.js',
         tweets: tweetsWithThatId // an array of only one element ;-)
@@ -47,11 +46,11 @@ module.exports = function makeRouterWithSockets (io, client) {
 
   // create a new tweet
   router.post('/tweets', function(req, res, next){
-    client.query("SELECT id FROM users WHERE name=$1", [req.body.name], function(err, userid) {
-
-      client.query("INSERT INTO tweets (userid, content) VALUES ($1, $2)", [1, req.body.text], function(err, result){
+    client.query("SELECT * FROM users WHERE name=$1", [req.body.name], function(err, result) {
+      if(err) console.error(req.body.name);
+      var userid = result.rows[0].id;
+      client.query("INSERT INTO tweets (userid, content) VALUES ($1, $2)", [userid, req.body.text], function(err, result){
         var newTweet = result.rows;
-        console.log(req.body.text);
         if (err) console.error(err);
         io.sockets.emit('new_tweet', newTweet);
         res.redirect('/');
